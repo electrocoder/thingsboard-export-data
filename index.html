@@ -3,9 +3,131 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bootstrap demo</title>
+    <title>Thingsboard Export Data-PDF, PNG, XLS, JSON</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <h1>Hello, world!</h1>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
+        <a class="navbar-brand" href="#" onclick="showMainPage()">TB Export Data</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="#">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="terms.html">Terms of Use</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="privacy.html">Privacy Policy</a>
+            </li>
+          </ul>
+          <form class="d-flex" role="search" id="searchForm">
+            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search" id="searchInput">
+            <button class="btn btn-outline-success" type="submit" id="searchButton">Search</button>
+          </form>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <div class="container my-5" id="main_id">
+        <h1>Hello,</h1>
+        <div class="col-lg-8 px-0">
+          <p class="fs-5">ThingsBoard Export Data allows you to generate reports using existing dashboards.
+            The Reports Server is a standalone service used to generate reports by rendering dashboards in a headless browser. For more information, please visit the <a href="https://demo.thingsboard.io/swagger-ui/index.html">TB Swagger</a> page.</p>
+          <p>ThingsBoard open-source IoT platform REST API tool.</p>
+          <hr class="col-1 my-4">
+          <form>
+            <div class="mb-3">
+              <label for="hostInput" class="form-label">Host address</label>
+              <input type="text" class="form-control" id="hostInput" aria-describedby="hostHelp" placeholder="http://yourdomain.com:8070">
+              <div id="hostHelp" class="form-text">Host site address.</div>
+            </div>
+            <div class="mb-3">
+              <label for="emailInput" class="form-label">Email address</label>
+              <input type="email" class="form-control" id="emailInput" aria-describedby="emailHelp" placeholder="aaa@bbb.com">
+              <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
+            </div>
+            <div class="mb-3">
+              <label for="passwordInput" class="form-label">Password</label>
+              <input type="password" class="form-control" id="passwordInput" placeholder="password">
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="acceptPrivacyPolicy">
+              <label class="form-check-label" for="acceptPrivacyPolicy">Accept <a href="privacy.html">Privacy Policy</a></label>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="acceptTermsofUse">
+              <label class="form-check-label" for="acceptTermsofUse">Accept <a href="terms.html">Terms of Use</a></label>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="acceptLicense">
+              <label class="form-check-label" for="acceptLicense">I accept that this software is licensed under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GNU General Public License v3.0</a>.</label>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="saveToSession">
+              <label class="form-check-label" for="saveToSession">Save credentials to session storage</label>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="main()">Submit</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="container my-5" id="devices_id" style="display:none">
+        <h1>Devices,</h1>
+        <div id="device-list"></div>
+        <form class="needs-validation" novalidate>
+          <div class="row g-3 mt-3">
+            <div class="col-md-4">
+              <label for="startDateTime" class="form-label">Başlangıç Tarih-Saat</label>
+              <input type="text" class="form-control" id="startDateTime" placeholder="Tarih seçin" required>
+              <div class="invalid-feedback">Başlangıç tarihi gerekli!</div>
+            </div>
+            <div class="col-md-4">
+              <label for="endDateTime" class="form-label">Bitiş Tarih-Saat</label>
+              <input type="text" class="form-control" id="endDateTime" placeholder="Tarih seçin" required>
+              <div class="invalid-feedback">Bitiş tarihi gerekli!</div>
+            </div>
+            <div class="col-md-4">
+              <label for="dataLimit" class="form-label">Limit</label>
+              <input type="number" class="form-control" id="dataLimit" value="1000" min="1" max="10000" required>
+              <div class="invalid-feedback">Limit gerekli!</div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary mt-3" id="select_device_button">Get Telemetry</button>
+        </form>
+      </div>
+
+      <div class="container my-5" id="telemetry_id" style="display:none">
+        <h1>Telemetry,</h1>
+        <div class="mt-3">
+          <button type="button" class="btn btn-success" onclick="exportToPDF()">Export PDF</button>
+          <button type="button" class="btn btn-success" onclick="exportToPNG()">Export PNG</button>
+          <button type="button" class="btn btn-success" onclick="exportToXLS()">Export XLS</button>
+          <button type="button" class="btn btn-success" onclick="exportToJSON()">Export JSON</button>
+          <button type="button" class="btn btn-secondary ms-2" onclick="backToDevices()">Geri</button>
+        </div>
+        <div id="table-container" class="mt-3"></div>  
+      </div>
+    </main>
+
+    <footer class="text-center py-3 bg-dark text-white">
+      <p>© 2025 TB Export Data. All rights reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script src="main.js"></script>
   </body>
 </html>
