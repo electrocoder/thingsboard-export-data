@@ -1,6 +1,10 @@
 /*
- * electrocoder
- */
+  Project: ThingsBoard Export Data
+  Description: A tool to export ThingsBoard telemetry data to PDF, PNG, XLS, and JSON formats.
+  Author: electrocoder https://github.com/electrocoder/thingsboard-export-data
+  Created: April 2025
+  Note: This is an independent project using ThingsBoard's open-source API. It is not affiliated with or endorsed by ThingsBoard, Inc.
+*/
 
 function login(host, email, password) {
   return new Promise((resolve, reject) => {
@@ -108,25 +112,28 @@ function get_telemetry(host, token, device_id, keys, startTs, endTs, limit) {
     const keysStr = keys.join(",");
     const end_point = `${host}/api/plugins/telemetry/DEVICE/${device_id}/values/timeseries?keys=${keysStr}&startTs=${startTs}&endTs=${endTs}&limit=${limit}`;
 
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', end_point);
-    xhr.setRequestHeader("Authorization", "Bearer " + token);
+    // API rate limit’lere uyum için gecikme
+    setTimeout(() => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', end_point);
+      xhr.setRequestHeader("Authorization", "Bearer " + token);
 
-    xhr.onload = function () {
-      if (xhr.status === 200) {
-        const response = JSON.parse(xhr.responseText);
-        window.lastTelemetryData = response; // JSON için sakla
-        resolve(response);
-      } else {
-        reject(new Error('Telemetri alınamadı: ' + xhr.status));
-      }
-    };
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          const response = JSON.parse(xhr.responseText);
+          window.lastTelemetryData = response; // JSON için sakla
+          resolve(response);
+        } else {
+          reject(new Error('Telemetri alınamadı: ' + xhr.status));
+        }
+      };
 
-    xhr.onerror = function () {
-      reject(new Error('İstek hatası'));
-    };
+      xhr.onerror = function () {
+        reject(new Error('İstek hatası'));
+      };
 
-    xhr.send();
+      xhr.send();
+    }, 1000); // 1 saniye gecikme
   });
 }
 
@@ -192,8 +199,8 @@ function getExportInfo() {
   const startDate = window.selectedStartDate || 'Unknown';
   const endDate = window.selectedEndDate || 'Unknown';
   return {
-    project: "TB Export Data",
-    github: "https://github.com/your-username/tb-export-data",
+    project: "ThingsBoard Export Data",
+    github: "https://github.com/electrocoder/thingsboard-export-data",
     license: "Licensed under GNU General Public License v3.0",
     dateRange: `From ${formatDateForDisplay(startDate)} to ${formatDateForDisplay(endDate)}`
   };
@@ -202,10 +209,10 @@ function getExportInfo() {
 async function exportToPDF() {
   const table = document.getElementById('table-container');
   const info = getExportInfo();
-  
+
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
-  
+
   // Başlık bilgileri
   pdf.setFontSize(16);
   pdf.text(info.project, 10, 10);
@@ -213,14 +220,14 @@ async function exportToPDF() {
   pdf.text(`GitHub: ${info.github}`, 10, 20);
   pdf.text(info.license, 10, 30);
   pdf.text(info.dateRange, 10, 40);
-  
+
   // Tablo için canvas
   const canvas = await html2canvas(table);
   const imgData = canvas.toDataURL('image/png');
   const imgProps = pdf.getImageProperties(imgData);
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-  
+
   pdf.addImage(imgData, 'PNG', 10, 50, pdfWidth - 20, pdfHeight);
   pdf.save(getExportFilename('pdf'));
 }
@@ -228,7 +235,7 @@ async function exportToPDF() {
 async function exportToPNG() {
   const tableContainer = document.getElementById('table-container');
   const info = getExportInfo();
-  
+
   // Geçici bilgi div’i ekle
   const infoDiv = document.createElement('div');
   infoDiv.className = 'export-info';
@@ -239,14 +246,14 @@ async function exportToPNG() {
     <p>${info.dateRange}</p>
   `;
   tableContainer.prepend(infoDiv);
-  
+
   // Canvas ile yakala
   const canvas = await html2canvas(tableContainer);
   const link = document.createElement('a');
   link.href = canvas.toDataURL('image/png');
   link.download = getExportFilename('png');
   link.click();
-  
+
   // Div’i kaldır
   infoDiv.remove();
 }
@@ -254,7 +261,7 @@ async function exportToPNG() {
 function exportToXLS() {
   const table = document.querySelector('#table-container table');
   const info = getExportInfo();
-  
+
   // Bilgi satırı ekle
   const ws = XLSX.utils.table_to_sheet(table);
   XLSX.utils.sheet_add_aoa(ws, [
@@ -264,7 +271,7 @@ function exportToXLS() {
     [info.dateRange],
     [] // Boş satır
   ], { origin: 0 });
-  
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Telemetry");
   XLSX.writeFile(wb, getExportFilename('xlsx'));
@@ -273,12 +280,12 @@ function exportToXLS() {
 function exportToJSON() {
   const telemetryData = window.lastTelemetryData;
   const info = getExportInfo();
-  
+
   const exportData = {
     info: info,
     telemetry: telemetryData
   };
-  
+
   const jsonStr = JSON.stringify(exportData, null, 2);
   const blob = new Blob([jsonStr], { type: 'application/json' });
   const link = document.createElement('a');
@@ -363,7 +370,7 @@ function searchTable(query) {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('hostInput').value = sessionStorage.getItem('host') || '';
   document.getElementById('emailInput').value = sessionStorage.getItem('email') || '';
-  document.getElementById('passwordInput').value = sessionStorage.getItem('password') || '';
+  // Şifre doldurulmuyor
 });
 
 async function main() {
@@ -372,11 +379,11 @@ async function main() {
     const email = document.getElementById("emailInput").value;
     const password = document.getElementById("passwordInput").value;
 
-    // sessionStorage’a kaydet
+    // sessionStorage’a kaydet (şifre hariç)
     if (document.getElementById('saveToSession').checked) {
       sessionStorage.setItem('host', host);
       sessionStorage.setItem('email', email);
-      sessionStorage.setItem('password', password);
+      // Şifre kaydedilmiyor
     }
 
     const token = await login(host, email, password);
@@ -439,7 +446,7 @@ async function main() {
     });
     searchForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      searchëtTable(searchInput.value);
+      searchTable(searchInput.value);
     });
 
     // Get Telemetry butonu

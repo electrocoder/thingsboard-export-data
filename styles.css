@@ -1,13 +1,18 @@
 /*
- * Custom CSS
- */
+  Project: ThingsBoard Export Data
+  Description: A tool to export ThingsBoard telemetry data to PDF, PNG, XLS, and JSON formats.
+  Author: electrocoder https://github.com/electrocoder/thingsboard-export-data
+  Created: April 2025
+  Note: This is an independent project using ThingsBoard's open-source API. It is not affiliated with or endorsed by ThingsBoard, Inc.
+*/
 
- :root {
+:root {
   --bs-body-bg: var(--bs-gray-100);
 }
 
 /* Flexbox düzeni */
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
 }
